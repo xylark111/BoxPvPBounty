@@ -15,14 +15,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extract source
-        run: unzip -o BoxPvPBounty-source.zip
+      - name: Extract zip (jika ada)
+        run: |
+          for z in *.zip; do
+            [ -f "$z" ] && unzip -o "$z"
+          done || true
 
       - name: Build
-        run: mvn -B clean package
-        working-directory: BoxPvPBounty
+        run: |
+          POM=$(find . -name pom.xml -not -path './.git/*' | head -n 1)
+          if [ -z "$POM" ]; then
+            echo "pom.xml tidak ditemukan. Isi repo:"
+            ls -R
+            exit 1
+          fi
+          echo "Build dari: $POM"
+          cd "$(dirname "$POM")"
+          mvn -B clean package
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp target/BoxPvPBounty-1.0.0.jar "$GITHUB_WORKSPACE/out/"
 
       - uses: actions/upload-artifact@v4
         with:
           name: BoxPvPBounty
-          path: BoxPvPBounty/target/BoxPvPBounty-1.0.0.jar
+          path: out/BoxPvPBounty-1.0.0.jar
